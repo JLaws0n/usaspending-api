@@ -24,6 +24,9 @@ class AggregateView(AggregateQuerysetMixin,
 
     exception_logger = logging.getLogger("exceptions")
 
+    def get_serializer_context(self):
+        return {"group_fields": self.agg_group_field}
+
     def list(self, request, *args, **kwargs):
         """
         Override the parent list method so we can aggregate the data

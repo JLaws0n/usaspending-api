@@ -112,7 +112,18 @@ class LimitableSerializer(serializers.ModelSerializer):
 
 class AggregateSerializer(serializers.Serializer):
 
-    # item = serializers.CharField(required=False)
-    place_of_performance_id = serializers.IntegerField(required=False)
-    awarding_agency_id = serializers.IntegerField(required=False)
-    aggregate = serializers.DecimalField(20, 2)
+    def __init__(self, *args, **kwargs):
+        super(AggregateSerializer, self).__init__(*args, **kwargs)
+
+        # Grab the set of group fields passed in via context from the viewset
+        group_fields = self.context['group_fields']
+
+        # Always show aggregate
+        self.fields['aggregate'] = serializers.DecimalField(20, 2)
+
+        # Attach all the group fields for rendering - we just set them all to
+        # charfield for now for simplicity, but if required in the future we
+        # can do some fancy footwork to determine the fieldtype from the model
+        # via viewset context, but this allows us to apply to any model for now
+        for field in group_fields:
+            self.fields[field] = serializers.CharField(required=False)

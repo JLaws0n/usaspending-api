@@ -30,6 +30,8 @@ class AggregateQuerysetMixin(object):
         # validate request parameters
         agg_field, group_field, date_part = self.validate_request(params)
 
+        self.agg_group_field = group_field
+
         # get the queryset to be aggregated
         queryset = self.get_queryset()
 
@@ -59,12 +61,12 @@ class AggregateQuerysetMixin(object):
             else:
                 for group_item in group_field:
                     group_expr = self._wrapped_f_expression(group_item)
-                    group_field_list[group_item] = group_expr
+                    # We must use a different name than the model field here for
+                    # grouping reasons to prevent conflicts with the model field
+                    group_field_list["grp_" + group_item] = group_expr
                 print(group_field_list)
             aggregate = (
-                queryset.annotate(**group_field_list)
-                    .values('awarding_agency_id', 'awarding_agency_id')
-                    .annotate(aggregate=agg_function(agg_field)))
+                queryset.annotate(**group_field_list).values(*group_field).annotate(aggregate=agg_function(agg_field)))
 
         # otherwise single item
         else:
@@ -102,16 +104,13 @@ class AggregateQuerysetMixin(object):
         # else:
         #     group_expr = self._wrapped_f_expression(group_field)
         #     # group queryset by a non-date field and aggregate
-
-
-        # print(aggregate)
+        # print(aggregate.query)
         return aggregate
 
     _sql_function_transformations = {'fy': IntegerField}
 
     # def group_field_lst(self, group_list):
     #     for item in group_list:
-
 
     def _wrapped_f_expression(self, col_name):
         """F-expression of col, wrapped if needed with SQL function call
