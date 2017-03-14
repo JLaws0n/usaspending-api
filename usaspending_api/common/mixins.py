@@ -45,39 +45,33 @@ class AggregateQuerysetMixin(object):
         }
         agg_function = params.get('aggregate', 'sum').lower()
         agg_function = agg_map.get(agg_function, Sum)
-        print(agg_function)
+
+        if date_part:
+            group_func_map = {
+                'year': ExtractYear,
+                'month': ExtractMonth,
+                'day': ExtractDay
+            }
+            group_func = group_func_map.get(date_part)
+
         # check if group_field is list
         if type(group_field) == list:
             group_field_list = {}
-            if date_part:
-                group_func_map = {
-                    'year': ExtractYear,
-                    'month': ExtractMonth,
-                    'day': ExtractDay
-                }
-                for group_item in group_field:
-                    group_func = group_func_map.get(date_part)
-                    group_field_list[group_item] = group_func(group_item)
-            else:
-                for group_item in group_field:
+            for group_item in group_field:
+                if group_item == 'action_date' and date_part:
+                    print(group_item)
+                    group_field_list["grp_" + group_item] = group_func(group_item)
+                else:
                     group_expr = self._wrapped_f_expression(group_item)
                     # We must use a different name than the model field here for
                     # grouping reasons to prevent conflicts with the model field
                     group_field_list["grp_" + group_item] = group_expr
-                print(group_field_list)
             aggregate = (
                 queryset.annotate(**group_field_list).values(*group_field).annotate(aggregate=agg_function(agg_field)))
-
         # otherwise single item
         else:
             if group_field and date_part:
                 # group queryset by a date field and aggregate
-                group_func_map = {
-                    'year': ExtractYear,
-                    'month': ExtractMonth,
-                    'day': ExtractDay
-                }
-                group_func = group_func_map.get(date_part)
                 aggregate = (
                     queryset.annotate(group_field=group_func(group_field)).values(group_field).annotate(
                         aggregate=agg_function(agg_field)))
@@ -89,22 +83,6 @@ class AggregateQuerysetMixin(object):
                     .values(group_field)
                     .annotate(aggregate=agg_function(agg_field)))
 
-        # """ORIGINAL CODE for reference"""
-        # if group_field and date_part:
-        #     # group queryset by a date field and aggregate
-        #     group_func_map = {
-        #         'year': ExtractYear,
-        #         'month': ExtractMonth,
-        #         'day': ExtractDay
-        #     }
-        #     group_func = group_func_map.get(date_part)
-        #     aggregate = (
-        #         queryset.annotate(item=group_func(group_field)).values('item').annotate(
-        #             aggregate=agg_function(agg_field)))
-        # else:
-        #     group_expr = self._wrapped_f_expression(group_field)
-        #     # group queryset by a non-date field and aggregate
-        # print(aggregate.query)
         return aggregate
 
     _sql_function_transformations = {'fy': IntegerField}
