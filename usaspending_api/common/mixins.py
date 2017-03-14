@@ -58,8 +58,7 @@ class AggregateQuerysetMixin(object):
         if type(group_field) == list:
             group_field_list = {}
             for group_item in group_field:
-                if group_item == 'action_date' and date_part:
-                    print(group_item)
+                if group_item == 'action_date' and date_par:
                     group_field_list["grp_" + group_item] = group_func(group_item)
                 else:
                     group_expr = self._wrapped_f_expression(group_item)
@@ -148,11 +147,15 @@ class AggregateQuerysetMixin(object):
             # we're grouping by must be a date-related field
             # (there is probably a better way to do this?)
             date_fields = ['DateField', 'DateTimeField']
-            if model._meta.get_field(group_field).get_internal_type() not in date_fields:
-                raise InvalidParameterException(
-                    'Group by date part ({}) requested for a non-date group by ({})'.format(
-                        date_part, group_field)
-                )
+            gf = group_field
+            if not isinstance(gf, list):
+                gf = [gf]
+            for f in gf:
+                if model._meta.get_field(f).get_internal_type() not in date_fields:
+                    raise InvalidParameterException(
+                        'Group by date part ({}) requested for a non-date group by ({})'.format(
+                            date_part, f)
+                    )
             # date_part must be a supported date component
             supported_date_parts = ['year', 'month', 'quarter', 'day']
             date_part = date_part.lower()
