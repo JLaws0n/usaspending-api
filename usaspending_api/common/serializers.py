@@ -112,5 +112,7 @@ class LimitableSerializer(serializers.ModelSerializer):
 
 class AggregateSerializer(serializers.Serializer):
 
-    item = serializers.CharField(required=False)
+    # item = serializers.CharField(required=False)
+    place_of_performance_id = serializers.IntegerField(required=False)
+    awarding_agency_id = serializers.IntegerField(required=False)
     aggregate = serializers.DecimalField(20, 2)
